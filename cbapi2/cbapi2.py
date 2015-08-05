@@ -1055,6 +1055,8 @@ class CbApi2(object):
         self._default_args = {"cb.urlver": 1, 'facet': ['false', 'false']}
         self._retry_count = retry_count
 
+        self.http_session = requests.Session()
+
         if debug:
             # only enable logging once
             self._enable_logging()
@@ -1131,13 +1133,13 @@ class CbApi2(object):
 
         while keep_retrying:
             if data:
-                r = requests.post(url, data=data, headers=self._token_header, verify=self._ssl_verify,
-                                  proxies=self._proxy, timeout=timeout)
+                r = self.http_session.post(url, data=data, headers=self._token_header, verify=self._ssl_verify,
+                                           proxies=self._proxy, timeout=timeout)
                 self._logger.debug('HTTP POST {0:s} took {2:.3f}s (response {1:d})'.format(url, r.status_code,
                                                                                            r.elapsed.total_seconds()))
             else:
-                r = requests.get(url, data=data, headers=self._token_header, verify=self._ssl_verify,
-                                 proxies=self._proxy, timeout=timeout)
+                r = self.http_session.get(url, data=data, headers=self._token_header, verify=self._ssl_verify,
+                                          proxies=self._proxy, timeout=timeout)
                 self._logger.debug('HTTP GET {0:s} took {2:.3f}s (response {1:d})'.format(url, r.status_code,
                                                                                           r.elapsed.total_seconds()))
 
