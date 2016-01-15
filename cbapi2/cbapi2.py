@@ -1312,29 +1312,36 @@ def from_ui(uri, apitoken, ssl_verify=True, retry_count=5):
     return cb.from_ui(uri)
 
 
+def event_summary(event):
+    if type(event) == CbFileModEvent:
+        return [event.parent.path, event.timestamp, event.type, event.path, '']
+    elif type(event) == CbNetConnEvent:
+        if event.dns:
+            hostname = event.dns
+        else:
+            hostname = event.ipaddr
+        hostname += ':%d' % event.port
+
+        return [event.parent.path, event.timestamp, event.direction + ' netconn', hostname, '']
+    elif type(event) == CbRegModEvent:
+        return [event.parent.path, event.timestamp, event.type, event.path, '']
+    elif type(event) == CbChildProcEvent:
+        return [event.parent.path, event.timestamp, 'childproc', event.path, event.proc.cmdline]
+    elif type(event) == CbModLoadEvent:
+        return [event.parent.path, event.timestamp, 'modload', event.path, event.md5]
+    else:
+        return None
+
+
 def write_event_csv(all_events, fp):
     eventwriter = csv.writer(fp)
 
     eventwriter.writerow(['ProcessPath', 'Timestamp', 'Event', 'Path/IP/Domain', 'Comments'])
 
     for event in all_events:
-        if type(event) == CbFileModEvent:
-            eventwriter.writerow([event.parent.path, event.timestamp, event.type, event.path, ''])
-        elif type(event) == CbNetConnEvent:
-            if event.dns:
-                hostname = event.dns
-            else:
-                hostname = event.ipaddr
-            hostname += ':%d' % event.port
-
-            eventwriter.writerow([event.parent.path, event.timestamp, event.direction + ' netconn', hostname, ''])
-        elif type(event) == CbRegModEvent:
-            eventwriter.writerow([event.parent.path, event.timestamp, event.type, event.path, ''])
-        elif type(event) == CbChildProcEvent:
-            eventwriter.writerow([event.parent.path, event.timestamp, 'childproc', event.path, event.proc.cmdline])
-        elif type(event) == CbModLoadEvent:
-            eventwriter.writerow([event.parent.path, event.timestamp, 'modload', event.path, event.md5])
-
+        summary = event_summary(event)
+        if summary:
+            eventwriter.writerow(summary)
     return 0
 
 
