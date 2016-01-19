@@ -1,4 +1,6 @@
 import csv
+import os
+from ConfigParser import RawConfigParser
 from functools import total_ordering
 import urllib
 import time
@@ -1044,7 +1046,28 @@ class MultiCbApi2(object):
 
 
 class CbApi2(object):
-    def __init__(self, url, api_token, ssl_verify=True, retry_count=5, debug=False, proxy=None):
+    def __init__(self, profile=None, url=None, token=None, ssl_verify=True, retry_count=5, debug=False, proxy=None):
+        if not url or not token:
+            # try the credential file
+            credential_file_path = os.path.join(os.path.expanduser("~"), ".carbonblack", "credentials")
+            if os.access(credential_file_path, os.R_OK):
+                credentials = RawConfigParser(defaults={"url": None, "ssl_verify": False, "token": None})
+                credentials.read(credential_file_path)
+
+                credential_profile = profile or "default"
+                if not credentials.has_section(credential_profile):
+                    raise Exception("Cannot find credential profile %s in %s" % (credential_profile,
+                                                                                 credential_file_path))
+                url = credentials.get(credential_profile, "url")
+                ssl_verify = credentials.getboolean(credential_profile, "ssl_verify")
+                token = credentials.get(credential_profile, "token")
+
+                if not url:
+                    raise Exception("No URL found when loading credential profile %s from %s" % (credential_profile,
+                                                                                                 credential_file_path))
+                if not token:
+                    raise Exception("No API token found when loading credential profile %s from %s" % (credential_profile,
+                                                                                                       credential_file_path))
 
         if not url.startswith(('http://', 'https://')):
             raise Exception("Malformed URL")
@@ -1062,7 +1085,7 @@ class CbApi2(object):
             self._enable_logging()
 
         # set up requests header
-        self._token_header = {'X-Auth-Token': api_token}
+        self._token_header = {'X-Auth-Token': token}
 
         # logging
         self._logger = logging.getLogger('co.redcanary.cbapi2')
