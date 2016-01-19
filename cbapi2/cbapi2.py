@@ -1046,7 +1046,7 @@ class MultiCbApi2(object):
 
 
 class CbApi2(object):
-    def __init__(self, profile=None, url=None, token=None, ssl_verify=True, retry_count=5, debug=False, proxy=None):
+    def __init__(self, url=None, token=None, ssl_verify=True, profile=None, retry_count=5, debug=False, proxy=None):
         if not url or not token:
             # try the credential file
             credential_file_path = os.path.join(os.path.expanduser("~"), ".carbonblack", "credentials")
